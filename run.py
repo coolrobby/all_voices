@@ -6,7 +6,7 @@ st.title("Excel 数据填充")
 uploaded_file = st.file_uploader("上传包含学生信息的 Excel 文件 (list.xlsx)", type=["xlsx"])
 
 # 读取 student.xlsx 模板
-template_path = 'student.xlsx'
+template_path = 'template.xlsx'
 students_df = pd.read_excel(template_path)
 
 if uploaded_file is not None:

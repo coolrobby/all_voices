@@ -1,36 +1,31 @@
+import pandas as pd
 import streamlit as st
-import requests
 
-# 获取Edge TTS可用语音
-def get_edge_tts_voices():
-    url = "https://edge.microsoft.com/tts/voices"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # 检查请求是否成功
-        return response.json()
-    except requests.exceptions.HTTPError as http_err:
-        st.error(f"HTTP错误: {http_err}")
-    except requests.exceptions.RequestException as req_err:
-        st.error(f"请求错误: {req_err}")
-    except ValueError:
-        st.error("返回的数据无法解析为JSON格式。")
-    
-    return []
+# 设置文件上传
+st.title("Excel 数据填充")
+uploaded_file = st.file_uploader("上传包含学生信息的 Excel 文件 (list.xlsx)", type=["xlsx"])
 
-def main():
-    st.title("Edge TTS 语音列表")
-    
-    voices = get_edge_tts_voices()
-    
-    if voices:
-        st.header("可用的语音")
-        
-        for voice in voices:
-            language = voice.get('locale', '未知语言')
-            name = voice.get('name', '未知语音')
-            st.write(f"语言: {language}, 语音: {name}")
-    else:
-        st.write("未找到可用语音。")
+# 读取 student.xlsx 模板
+template_path = 'student.xlsx'
+students_df = pd.read_excel(template_path)
 
-if __name__ == "__main__":
-    main()
+if uploaded_file is not None:
+    # 读取用户上传的文件
+    list_df = pd.read_excel(uploaded_file)
+
+    # 根据“学号”更新“学生姓名”和“教师”列
+    for index, row in students_df.iterrows():
+        student_id = row['学号']
+        match = list_df[list_df['学号'] == student_id]
+        if not match.empty:
+            students_df.at[index, '学生姓名'] = match['学生姓名'].values[0]
+            students_df.at[index, '教师'] = match['教师'].values[0]
+
+    # 输出更新后的 DataFrame
+    st.write("更新后的学生信息：")
+    st.dataframe(students_df)
+
+    # 保存更新后的文件
+    output_file = "updated_student.xlsx"
+    students_df.to_excel(output_file, index=False)
+    st.download_button("下载更新后的文件", output_file)
